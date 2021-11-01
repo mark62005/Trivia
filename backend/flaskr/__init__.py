@@ -9,6 +9,24 @@ from models import setup_db, Question, Category
 QUESTIONS_PER_PAGE = 10
 
 
+def fetch_categories():
+    categories = Category.query.all()
+    return {
+        "categories": [cat.format() for cat in categories],
+        "total_categories": len(categories)
+    }
+
+
+def get_paginated_questions(request, questions):
+    page = request.args.get('page', 1, type=int)
+    start = (page - 1) * QUESTIONS_PER_PAGE
+    end = start + QUESTIONS_PER_PAGE
+
+    formatted_questions = [question.format() for question in questions]
+    paginated_questions = formatted_questions[start:end]
+    return paginated_questions
+
+
 def create_app(test_config=None):
     # create and configure the app
     app = Flask(__name__)
@@ -39,34 +57,54 @@ def create_app(test_config=None):
     '''
     @app.route('/categories', methods=['GET'])
     def get_categories():
-        try:
-            categories = Category.query.all()
+        if request.method == 'GET':
+            categories = fetch_categories()
+
+            if len(categories['categories']) is None:
+                abort(404)
+
             return jsonify({
                 'success': True,
-                'categories': [cat.format() for cat in categories],
-                'total_categories': len(categories),
+                'categories': categories['categories'],
+                'total_categories': categories['total_categories'],
             })
-        except Exception as e:
-            print(e)
-            abort(404)
 
     '''
     @TODO:
-    Create an endpoint to handle GET requests for questions, 
-    including pagination (every 10 questions). 
-    This endpoint should return a list of questions, 
-    number of total questions, current category, categories. 
+    Create an endpoint to handle GET requests for questions,
+    including pagination (every 10 questions).
+    This endpoint should return a list of questions,
+    number of total questions, current category, categories.
 
     TEST: At this point, when you start the application
     you should see questions and categories generated,
     ten questions per page and pagination at the bottom of the
     screen for three pages.
-    Clicking on the page numbers should update the questions. 
+    Clicking on the page numbers should update the questions.
     '''
+    @app.route('/questions', methods=['GET'])
+    def get_questions():
+        if request.method == 'GET':
+            questions = Question.query.order_by(Question.id).all()
+            categories = fetch_categories()
+
+            current_questions = get_paginated_questions(request, questions)
+
+            if len(current_questions) == 0 or\
+                    len(categories['categories']) == 0:
+                abort(404)
+
+            return jsonify({
+                'success': True,
+                'questions': current_questions,
+                'total_questions': len(questions),
+                'categories': categories['categories'],
+                'current_category': None
+            })
 
     '''
-    @TODO: 
-    Create an endpoint to DELETE question using a question ID. 
+    @TODO:
+    Create an endpoint to DELETE question using a question ID.
 
     TEST: When you click the trash icon next to a question, the question will 
     be removed.
