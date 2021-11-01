@@ -1,8 +1,11 @@
 import os
 from flask import Flask, request, abort, jsonify
+from flask.helpers import url_for
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 import random
+
+from werkzeug.utils import redirect
 
 from models import setup_db, Question, Category
 
@@ -106,10 +109,36 @@ def create_app(test_config=None):
     @TODO:
     Create an endpoint to DELETE question using a question ID.
 
-    TEST: When you click the trash icon next to a question, the question will 
+    TEST: When you click the trash icon next to a question, the question will
     be removed.
-    This removal will persist in the database and when you refresh the page. 
+    This removal will persist in the database and when you refresh the page.
     '''
+    @app.route('/questions/<int:question_id>', methods=['DELETE'])
+    def delete_question(question_id):
+        if request.method == 'DELETE':
+            error = False
+            question = Question.query.filter(
+                Question.id == question_id).one_or_none()
+
+            if question is None:
+                abort(404)
+
+            try:
+                question.delete()
+            except Exception as e:
+                error = True
+                print(e)
+                db.session.rollback()
+            finally:
+                db.session.close()
+
+            if error:
+                abort(422)
+            else:
+                return jsonify({
+                    'success': True,
+                    'deleted': question_id
+                })
 
     '''
     @TODO: 
@@ -167,5 +196,13 @@ def create_app(test_config=None):
             'error': 404,
             'message': 'resource not found'
         }), 404
+
+    @app.errorhandler(422)
+    def unprocessable(error):
+        return jsonify({
+            'success': False,
+            'error': 422,
+            'message': 'unprocessable'
+        }), 422
 
     return app
