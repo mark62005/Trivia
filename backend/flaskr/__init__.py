@@ -141,16 +141,54 @@ def create_app(test_config=None):
                 })
 
     '''
-    @TODO: 
-    Create an endpoint to POST a new question, 
-    which will require the question and answer text, 
+    @TODO:
+    Create an endpoint to POST a new question,
+    which will require the question and answer text,
     category, and difficulty score.
 
-    TEST: When you submit a question on the "Add" tab, 
-    the form will clear and the question will appear at the end of 
+    TEST: When you submit a question on the "Add" tab,
+    the form will clear and the question will appear at the end of
     the last page
-    of the questions list in the "List" tab.  
+    of the questions list in the "List" tab.
     '''
+    @app.route('/questions', methods=['POST'])
+    def create_question():
+        if request.method == 'POST':
+            error = False
+            body = request.get_json()
+
+            new_question = body.get('question')
+            new_answer = body.get('answer')
+            new_difficulty = body.get('difficulty', 1)
+            new_question_category = body.get('category', 1)
+
+            if new_question is None or new_answer is None:
+                abort(422)
+
+            question = Question(
+                question=new_question,
+                answer=new_answer,
+                difficulty=new_difficulty,
+                category=new_question_category
+            )
+
+            try:
+                question.insert()
+            except Exception as e:
+                error = True
+                print(e)
+                db.session.rollback()
+            finally:
+                db.session.close()
+
+            if error:
+                abort(422)
+            else:
+                return jsonify({
+                    'success': True,
+                    'created': question.id,
+                    'total_questions': Question.query.count()
+                })
 
     '''
     @TODO: 
@@ -204,5 +242,13 @@ def create_app(test_config=None):
             'error': 422,
             'message': 'unprocessable'
         }), 422
+
+    @app.errorhandler(405)
+    def method_not_allowed(error):
+        return jsonify({
+            'success': False,
+            'error': 405,
+            'message': 'method not allowed'
+        }), 405
 
     return app
