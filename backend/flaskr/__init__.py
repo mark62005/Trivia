@@ -32,17 +32,23 @@ def create_app(test_config=None):
                              'GET, POST, PATCH, DELETE, OPTION')
         return response
 
-    @app.route('/')
-    def index():
-        return jsonify({
-            'success': True,
-            'message': 'hello world'
-        })
     '''
-    @TODO: 
-    Create an endpoint to handle GET requests 
+    @TODO:
+    Create an endpoint to handle GET requests
     for all available categories.
     '''
+    @app.route('/categories', methods=['GET'])
+    def get_categories():
+        try:
+            categories = Category.query.all()
+            return jsonify({
+                'success': True,
+                'categories': [cat.format() for cat in categories],
+                'total_categories': len(categories),
+            })
+        except Exception as e:
+            print(e)
+            abort(404)
 
     '''
     @TODO:
@@ -104,17 +110,24 @@ def create_app(test_config=None):
     Create a POST endpoint to get questions to play the quiz. 
     This endpoint should take category and previous question parameters 
     and return a random questions within the given category, 
-    if provided, and that is not one of the previous questions. 
+    if provided, and that is not one of the previous questions.
 
     TEST: In the "Play" tab, after a user selects "All" or a category,
     one question at a time is displayed, the user is allowed to answer
-    and shown whether they were correct or not. 
+    and shown whether they were correct or not.
     '''
 
     '''
-    @TODO: 
-    Create error handlers for all expected errors 
-    including 404 and 422. 
+    @TODO:
+    Create error handlers for all expected errors
+    including 404 and 422.
     '''
+    @app.errorhandler(404)
+    def resource_not_found(error):
+        return jsonify({
+            'success': False,
+            'error': 404,
+            'message': 'resource not found'
+        }), 404
 
     return app
