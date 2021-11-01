@@ -1,11 +1,8 @@
 import os
 from flask import Flask, request, abort, jsonify
-from flask.helpers import url_for
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 import random
-
-from werkzeug.utils import redirect
 
 from models import setup_db, Question, Category
 
@@ -191,15 +188,37 @@ def create_app(test_config=None):
                 })
 
     '''
-    @TODO: 
-    Create a POST endpoint to get questions based on a search term. 
-    It should return any questions for whom the search term 
-    is a substring of the question. 
+    @TODO:
+    Create a POST endpoint to get questions based on a search term.
+    It should return any questions for whom the search term
+    is a substring of the question.
 
-    TEST: Search by any phrase. The questions list will update to include 
-    only question that include that string within their question. 
-    Try using the word "title" to start. 
+    TEST: Search by any phrase. The questions list will update to include
+    only question that include that string within their question.
+    Try using the word "title" to start.
     '''
+    @app.route('/questions/search', methods=['POST'])
+    def search_questions():
+        if request.method == 'POST':
+            body = request.get_json()
+            search = body.get('search_term', None).strip()
+
+            try:
+                matched_questions = \
+                    Question.query.filter(
+                        Question.question.ilike(f'%{search}%')
+                    ).order_by(Question.question).all()
+
+                return jsonify({
+                    'success': True,
+                    'questions':
+                    get_paginated_questions(request, matched_questions),
+                    'total_questions': len(matched_questions),
+                    'current_category': None
+                })
+            except Exception as e:
+                print(e)
+                abort(422)
 
     '''
     @TODO: 
@@ -250,5 +269,13 @@ def create_app(test_config=None):
             'error': 405,
             'message': 'method not allowed'
         }), 405
+
+    @app.errorhandler(400)
+    def bad_request(error):
+        return jsonify({
+            'success': False,
+            'error': 400,
+            'message': 'bad request'
+        }), 400
 
     return app
