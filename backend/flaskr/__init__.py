@@ -207,7 +207,7 @@ def create_app(test_config=None):
                 matched_questions = \
                     Question.query.filter(
                         Question.question.ilike(f'%{search}%')
-                    ).order_by(Question.question).all()
+                    ).order_by(Question.category).all()
 
                 return jsonify({
                     'success': True,
