@@ -1,6 +1,7 @@
 import os
-from sqlalchemy import Column, String, Integer, create_engine
+from sqlalchemy import Column, String, Integer, create_engine, ForeignKey
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.orm import relationship
 import json
 
 database_name = "trivia"
@@ -36,7 +37,7 @@ class Question(db.Model):
     id = Column(Integer, primary_key=True)
     question = Column(String)
     answer = Column(String)
-    category = Column(String)
+    category = Column(Integer, ForeignKey('categories.id'))
     difficulty = Column(Integer)
 
     def __init__(self, question, answer, category, difficulty):
@@ -77,6 +78,10 @@ class Category(db.Model):
 
     id = Column(Integer, primary_key=True)
     type = Column(String)
+    questions = relationship(
+        'Question', backref='question_category',
+        lazy='dynamic', cascade='all, delete-orphan'
+    )
 
     def __init__(self, type):
         self.type = type

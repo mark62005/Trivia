@@ -221,13 +221,38 @@ def create_app(test_config=None):
                 abort(422)
 
     '''
-    @TODO: 
-    Create a GET endpoint to get questions based on category. 
+    @TODO:
+    Create a GET endpoint to get questions based on category.
 
-    TEST: In the "List" tab / main screen, clicking on one of the 
-    categories in the left column will cause only questions of that 
-    category to be shown. 
+    TEST: In the "List" tab / main screen, clicking on one of the
+    categories in the left column will cause only questions of that
+    category to be shown.
     '''
+    @app.route('/categories/<int:category_id>/questions', methods=['GET'])
+    def get_questions_by_category(category_id):
+        if request.method == 'GET':
+            category = Category.query.filter(
+                Category.id == category_id).one_or_none()
+
+            if category is None:
+                abort(404)
+
+            try:
+                matched_questions = \
+                    category.questions.order_by(Question.question).all()
+
+                current_questions = get_paginated_questions(
+                    request, matched_questions)
+
+                return jsonify({
+                    'success': True,
+                    'questions': current_questions,
+                    'total_questions': len(matched_questions),
+                    'current_category': category.format()
+                })
+            except Exception as e:
+                print(e)
+                abort(400)
 
     '''
     @TODO: 
