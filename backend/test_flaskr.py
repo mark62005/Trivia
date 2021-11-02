@@ -99,7 +99,7 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(data['success'], False)
         self.assertEqual(data['message'], 'unprocessable')
 
-    def test_405_if_book_creation_not_allowed(self):
+    def test_405_if_question_creation_not_allowed(self):
         res = self.client().post("/questions/123", json=self.new_question)
         data = json.loads(res.data)
 
